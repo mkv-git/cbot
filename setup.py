@@ -3,13 +3,14 @@ from setuptools import setup, find_packages
 requires = [
     "zmq",
     "pytz",
+    "ujson",
     "loguru",
     "alembic",
     "pydantic",
     "overrides",
     "websockets",
-    "psycopg-pool",
-    "pcycopg-binary",
+    "psycopg[pool]",
+    "psycopg[binary]",
 ]
 
 setup(

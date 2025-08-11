@@ -25,9 +25,9 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
         sa.Column("bot_group_id", sa.Integer, sa.ForeignKey("bot_groups.id"), nullable=False),
         sa.Column("public_ws_port", sa.SmallInteger, unique=True, nullable=False),
-        sa.Column("order_ws_port", sa.SmallInteger, unique=True, nullable=False),
+        sa.Column("private_ws_port", sa.SmallInteger, unique=True, nullable=False),
         sa.Column("trade_ws_port", sa.SmallInteger, unique=True, nullable=False),
-        sa.Column("rest_api_ws_port", sa.SmallInteger, unique=True, nullable=False),
+        sa.Column("rest_client_ws_port", sa.SmallInteger, unique=True, nullable=False),
     )
 
 
