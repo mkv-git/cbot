@@ -76,7 +76,6 @@ class PublicWSWorker(AbstractBaseWorker):
 
         while 1:
             msg_filter, payload = await self.stream_queue.get()
-            print(msg_filter, payload, datetime.datetime.fromtimestamp(payload['ts'] / 1000))
             await publisher.send_multipart([msg_filter.encode('utf-8'), orjson.dumps(payload)])
 
     async def start_positions_monitor(self):
@@ -100,12 +99,6 @@ class PublicWSWorker(AbstractBaseWorker):
                 res_obj = validate(GetPositionsResponse, res.result)
             except ValidationError as err:
                 logger.error(err.json())
-                err_obj = orjson.loads(err.json())
-                err_msg = str(
-                    orjson.dumps(
-                        {".".join([str(x) for x in eo["loc"]]): eo["msg"] for eo in err_obj}
-                    )
-                )
                 await asyncio.sleep(sleep_time)
                 continue
 
@@ -117,11 +110,6 @@ class PublicWSWorker(AbstractBaseWorker):
             if not (to_subscribe ^ to_unsubscribe):
                 await asyncio.sleep(sleep_time)
                 continue
-
-            sub_payload = {
-                "sub": to_subscribe,
-                "unsub": to_unsubscribe,
-            }
 
             for ticker in to_subscribe:
                 await self._public_ws.subscription(ticker, True, self.handle_ticker_stream)
