@@ -1,14 +1,8 @@
-from typing import Generic
-
 from pydantic import BaseModel
 
-from cbot.utils.classifiers import RESP, ResponseStatus
+from cbot.utils.classifiers import ResponseStatus, TDictAny
 
 
-class ErrorResponse(BaseModel):
-    result: str
-
-
-class WSResponse(BaseModel, Generic[RESP]):
+class WSResponse(BaseModel):
     status: ResponseStatus
-    data: RESP | ErrorResponse
+    result: list[TDictAny] | str

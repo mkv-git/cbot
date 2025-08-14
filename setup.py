@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 requires = [
     "zmq",
     "pytz",
-    "ujson",
+    "orjson",
     "loguru",
     "alembic",
     "pydantic",

@@ -5,7 +5,7 @@ INPROC_BACKEND_ADDR = "inproc://backend"
 LOGGING_FILE_ROOT_DIR = "/home/maksim/repos/cbot/cbot/logs"
 DEFAULT_LOGGING_FILE_CONFIG = {
     "level": "DEBUG",
-    "rotation": "1 day",
+    "rotation": "00:00",
     "compression": "tar.gz",
     "retention": 7,
     "diagnose": False,

@@ -5,15 +5,16 @@ from typing import Generic, Any
 from abc import ABC, abstractmethod
 
 import zmq
-import ujson
+import orjson
 from loguru import logger
 from pydantic import ValidationError
 from overrides import final, EnforceOverrides
 from zmq.asyncio import Context, Socket, Poller
 
+from cbot.utils.helpers import validate
 from cbot.base.models.request import WSRequest
-from cbot.utils.classifiers import REQ, RESP, MODEL, ResponseStatus
-from cbot.base.models.response import WSResponse, ErrorResponse
+from cbot.base.models.response import WSResponse
+from cbot.utils.classifiers import ResponseStatus, TDictAny
 from cbot.config.const import (
     INPROC_BACKEND_ADDR,
     LOGGING_FILE_ROOT_DIR,
@@ -23,7 +24,7 @@ from cbot.config.const import (
 )
 
 
-class AbstractBaseWorker(ABC, Generic[REQ, RESP], EnforceOverrides):
+class AbstractBaseWorker(ABC, EnforceOverrides):
     WORKER: str = "NOTSET"
 
     def __init__(self):
@@ -32,6 +33,7 @@ class AbstractBaseWorker(ABC, Generic[REQ, RESP], EnforceOverrides):
         self.context = Context()
         self.setup_logger()
         self.set_shell_title()
+        self.socks_vault = {}
 
     def setup_logger(self):
         logger.remove(0)
@@ -51,15 +53,28 @@ class AbstractBaseWorker(ABC, Generic[REQ, RESP], EnforceOverrides):
         pass
 
     @final
-    async def handle_success(self, payload: Any) -> WSResponse[RESP]:
-        return WSResponse(status=ResponseStatus.SUCCESS, data=payload)
+    async def handle_success(self, payload: Any) -> WSResponse:
+        return WSResponse(status=ResponseStatus.SUCCESS, result=payload)
 
     @final
-    async def handle_error(self, msg: str) -> WSResponse[RESP]:
-        return WSResponse(status=ResponseStatus.ERROR, data=ErrorResponse(result=msg))
+    async def handle_error(self, msg: str) -> WSResponse:
+        return WSResponse(status=ResponseStatus.ERROR, result=msg)
 
-    async def worker_query(self, payload: list[Any], sock_item: dict[str, Any]):
+    @final
+    async def init_dealer_workers(self):
+        for k, obj in self.socks_vault.items():
+            if obj["obj"] is not None:
+                continue
+
+            obj["obj"] = sock_obj = self.context.socket(zmq.DEALER)
+            sock_obj.identity = obj["identity"]
+            x = sock_obj.connect(obj["connection"])
+
+    async def worker_query(self, payload: list[Any], sock_item: TDictAny) -> WSResponse | None:
         sock_obj = sock_item["obj"]
+        if not sock_obj:
+            logger.error("Socket not initialized")
+            return
         sock_name = list(sock_item.keys())[0]
         await sock_obj.send_multipart(payload)
 
@@ -67,7 +82,8 @@ class AbstractBaseWorker(ABC, Generic[REQ, RESP], EnforceOverrides):
         while 1:
             if (await sock_obj.poll(DEFAULT_WS_REQUEST_TIMEOUT) & zmq.POLLIN) != 0:
                 msg = await sock_obj.recv_multipart()
-                return msg
+                msg_obj = orjson.loads(msg[0].decode("utf-8"))
+                return validate(WSResponse, msg_obj)
 
             retries_left -= 1
             logger.warning(f"No response from worker({sock_name})")

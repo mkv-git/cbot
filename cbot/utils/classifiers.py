@@ -1,7 +1,9 @@
 from enum import StrEnum
-from typing import Generic, TypeVar
+from typing import TypeVar, Any
 
 from pydantic import BaseModel
+
+type TDictAny = dict[str, Any]
 
 REQ = TypeVar("REQ", bound=BaseModel)
 RESP = TypeVar("RESP", bound=BaseModel)

@@ -33,6 +33,7 @@ def upgrade() -> None:
         sa.Column("order_name", sa.String(32), nullable=False, unique=True),
         sa.Column("leverage", sa.Numeric, nullable=False),
         sa.Column("restart", sa.Boolean, nullable=False, default=False),
+        sa.Column("warm_restart", sa.Boolean, nullable=False, default=False),
         sa.column("is_active", sa.Boolean, nullable=False, default=False),
         sa.Column("exit_on_empty", sa.Boolean, nullable=False, default=False),
         sa.Column("comment", sa.String(255)),
